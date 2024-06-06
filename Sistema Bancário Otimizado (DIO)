@@ -1,0 +1,139 @@
+def menu():
+    return """
+[d] Depositar
+[s] Sacar
+[e] Extrato
+[c] Cadastrar Usuário
+[a] Abrir Conta Corrente
+[q] Sair
+
+==>  """
+
+def exibir_extrato(saldo, entradas, saidas):
+    extrato = f"""
+    Extrato:
+    Entradas: {entradas}
+    Saídas: {saidas}
+    Saldo: R${saldo:.2f}
+    """
+    print(extrato)
+
+def cadastrar_usuario(usuarios):
+    cpf = input("Digite o CPF (apenas números): ")
+    if cpf in usuarios:
+        print("Usuário já cadastrado!")
+        return
+    
+    nome = input("Digite o nome: ")
+    data_nascimento = input("Digite a data de nascimento (dd/mm/yyyy): ")
+    endereco = input("Digite o endereço: ")
+
+    usuarios[cpf] = {"nome": nome, "data_nascimento": data_nascimento, "endereco": endereco}
+    print("Usuário cadastrado com sucesso!")
+
+def abrir_conta_corrente(contas, usuarios):
+    cpf = input("Digite o CPF do usuário: ")
+    if cpf not in usuarios:
+        print("Usuário não encontrado! Cadastre o usuário primeiro.")
+        return
+
+    numero_conta = len(contas) + 1
+    contas[numero_conta] = {"cpf": cpf, "saldo": 0, "entradas": [], "saidas": [], "qtd_saques": 0}
+    print(f"Conta corrente {numero_conta} aberta com sucesso!")
+
+def encontrar_conta_por_cpf(contas, cpf):
+    for numero_conta, conta in contas.items():
+        if conta["cpf"] == cpf:
+            return numero_conta
+    return None
+
+def depositar(contas):
+    cpf = input("Digite o CPF do usuário: ")
+    numero_conta = encontrar_conta_por_cpf(contas, cpf)
+    if numero_conta is None:
+        print("Conta não encontrada!")
+        return
+
+    while True:
+        try:
+            deposito = float(input("Insira o valor a ser depositado em conta ou [-1] para encerrar: "))
+            if deposito == -1:
+                break
+            elif deposito > 0:
+                contas[numero_conta]["saldo"] += deposito
+                contas[numero_conta]["entradas"].append(deposito)
+                print(f"Depósito de R${deposito:.2f} realizado com sucesso. Saldo atual: R${contas[numero_conta]['saldo']:.2f}.")
+            else:
+                print("Valor inválido. Favor inserir valores positivos.")
+        except ValueError:
+            print("Entrada inválida. Por favor, insira um número válido.")
+
+def sacar(contas, LIMITE_SAQUE, limite):
+    cpf = input("Digite o CPF do usuário: ")
+    numero_conta = encontrar_conta_por_cpf(contas, cpf)
+    if numero_conta is None:
+        print("Conta não encontrada!")
+        return
+
+    while contas[numero_conta]["qtd_saques"] < LIMITE_SAQUE:
+        try:
+            saque = float(input("Insira o valor a ser sacado ou [-1] para encerrar: "))
+            if saque == -1:
+                break
+            elif saque > 0:
+                if saque <= limite and saque <= contas[numero_conta]["saldo"]:
+                    contas[numero_conta]["saldo"] -= saque
+                    contas[numero_conta]["saidas"].append(saque)
+                    contas[numero_conta]["qtd_saques"] += 1
+                    print(f"Saque de R${saque:.2f} efetuado com sucesso. Saldo atual: R${contas[numero_conta]['saldo']:.2f}.")
+                    if contas[numero_conta]["qtd_saques"] == LIMITE_SAQUE:
+                        print("Limite de saques diários atingido.")
+                else:
+                    print("Valor de saque acima dos limites ou saldo insuficiente.")
+            else:
+                print("Valor inválido. Favor inserir valores positivos.")
+        except ValueError:
+            print("Entrada inválida. Por favor, insira um número válido.")
+
+def exibir_extrato_conta(contas):
+    cpf = input("Digite o CPF do usuário: ")
+    numero_conta = encontrar_conta_por_cpf(contas, cpf)
+    if numero_conta is None:
+        print("Conta não encontrada!")
+        return
+    
+    exibir_extrato(contas[numero_conta]["saldo"], contas[numero_conta]["entradas"], contas[numero_conta]["saidas"])
+
+def main():
+    usuarios = {}
+    contas = {}
+    LIMITE_SAQUE = 3
+    limite = 500
+
+    while True:
+        opcao = input(menu()).lower()
+
+        if opcao == "d":
+            depositar(contas)
+
+        elif opcao == "s":
+            sacar(contas, LIMITE_SAQUE, limite)
+
+        elif opcao == "e":
+            exibir_extrato_conta(contas)
+
+        elif opcao == "c":
+            cadastrar_usuario(usuarios)
+
+        elif opcao == "a":
+            abrir_conta_corrente(contas, usuarios)
+
+        elif opcao == "q":
+            print("Encerrando o sistema bancário. Obrigado por utilizar nossos serviços.")
+            break
+
+        else:
+            print("\nOperação Inválida, por favor selecione novamente a operação desejada.")
+
+if __name__ == "__main__":
+    main()
