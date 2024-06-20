@@ -1,0 +1,195 @@
+#Sistema Bancário Otimizado 2 (POO - DIO)
+
+#Definindo Classe Abstrata: ContaBancaria
+
+from abc import ABC, abstractmethod
+
+class ContaBancaria (ABC):
+    @abstractmethod
+    def depositar (self, valor):
+        pass
+
+    @abstractmethod
+    def sacar (self, valor):
+        pass
+
+    @abstractmethod
+    def exibir_extrato(self, valor):
+        pass
+
+#Implementando a classe ContaCorrente
+
+class ContaCorrente(ContaBancaria):
+    LIMITE_SAQUE = 3
+    LIMITE_VALOR_SAQUE = 500
+
+    def __init__(self, numero, usuario):
+        self.numero = numero
+        self.usuario = usuario
+        self.saldo = 0.0
+        self.entradas = []
+        self.saidas = []
+        self.qtd_saques = 0
+
+    def depositar(self, valor):
+        if valor > 0:
+            self.saldo+=valor
+            self.entradas.append(valor)
+            print(f"Depósito de R${valor} realizado com sucesso. \nSaldo Atual: R${self.saldo:.2f}.")
+        else:
+            print("Valor Inválido! Favor inserir valores positivos.")
+
+    def sacar (self, valor):
+        if self.qtd_saques>=ContaCorrente.LIMITE_SAQUE:
+            print("Limite de saques diários atingido.")
+            return
+        if valor<=0:
+            print("Valor Inválido! Favor inserir valores positivos.")
+            return
+        if valor > ContaCorrente.LIMITE_VALOR_SAQUE or valor > self.saldo:
+            print("Valor de Saque acima dos Limites ou Saldo Insuficiente.")
+            return
+        
+        self.saldo-=valor
+        self.saidas.append(valor)
+        self.qtd_saques+=1
+
+        print(f"Saque de R${valor} realizado com sucesso. \nSaldo Atual: R${self.saldo:.2f}.")
+
+    def exibir_extrato(self):
+        extrato = f"""
+        Extrato: 
+        Entradas: {self.entradas}
+        Saídas: {self.saidas}
+        Saldo: R${self.saldo:.2f}
+        """
+        print(extrato)
+
+#Criando a Classe Usuario:
+
+class Usuario:
+    def __init__(self, cpf, nome, data_nascimento, endereco):
+        self.cpf = cpf
+        self.nome = nome
+        self.data_nascimento = data_nascimento
+        self.endereco = endereco 
+
+#Implementando a Classe Banco:
+
+class Banco:
+    def __init__(self):
+        self.usuarios = {}
+        self.contas = {}
+        self.prox_num_conta = 1
+
+    def cadastrar_usuario(self):
+        cpf = input("Digite o CPF [apenas números]: ")
+        if cpf in self.usuarios:
+            print("Usuário já cadastrado.")
+            return
+        
+        nome = input("Digite o nome: ")
+        data_nascimento = input("Digite a data de nascimento [dd/mm/yyyy]: ")
+        endereco = input("Digite seu endereço: \nLogradouro - Número - Bairro - Cidade - Estado - CEP.\n==> ")
+
+        self.usuarios[cpf] = Usuario(cpf,nome, data_nascimento, endereco)
+        print("Usuário Cadastrado com Sucesso!")
+
+    def abrir_conta_corrente(self):
+        cpf = input("Digite o CPF [apenas números]: ")
+        if cpf not in self.usuarios:
+            print("Usuário não encontrado! \nCadastre o usuário primeiro.")
+            return
+        
+        usuario = self.usuarios[cpf]
+        conta = ContaCorrente(self.prox_num_conta, usuario)
+        self.contas[self.prox_num_conta] = conta
+        self.prox_num_conta+=1
+
+        print(f"Conta Corrente {conta.numero} aberta com sucesso!")
+
+    def encontrar_conta_por_cpf (self, cpf):
+        for conta in self.contas.values():
+            if conta.usuario.cpf == cpf:
+                return conta
+        return None
+    
+    def depositar(self):
+        cpf = input("Digite o CPF [apenas números]: ")
+        conta = self.encontrar_conta_por_cpf(cpf)
+
+        if not conta:
+            print("Conta não encontrada!")
+            return
+        
+        while True:
+            try:
+                deposito = float(input("Insira o valor a ser depositado em conta ou [-1] para encerrar: "))
+                if deposito == -1:
+                    break
+                conta.depositar(deposito)
+            except ValueError:
+                print("Entrada Inválida. Favor inserir números válidos.")
+
+    def sacar(self):
+        cpf = input("Digite o CPF [apenas números]: ")
+        conta = self.encontrar_conta_por_cpf(cpf)
+
+        if not conta:
+            print("Conta não encontrada!")
+            return
+        
+        while True:
+            try:
+                saque = float(input("Insira o valor a ser sacado da conta ou [-1] para encerrar: "))
+                if saque == -1:
+                    break
+                conta.sacar(saque)
+            except ValueError:
+                print("Entrada Inválida. Favor inserir números válidos.")
+
+    def exibir_extrato_conta(self):
+        cpf = input("Digite o CPF [apenas números]: ")
+        conta = self.encontrar_conta_por_cpf(cpf)
+        if not conta:
+            print("Conta não encontrada!")
+            return
+        conta.exibir_extrato()
+
+def menu():
+    return """
+    [d] Depositar
+    [s] Sacar
+    [e] Extrato
+    [c] Cadastrar Usuário
+    [a] Abrir Conta Corrente
+    [q] Sair.
+   
+    ==> """
+
+def main():
+    banco = Banco()
+    
+    while True:
+        opcao = input(menu()).lower()
+
+        if opcao == 'd':
+            banco.depositar()
+        elif opcao == 's':
+            banco.sacar()
+        elif opcao == 'e':
+            banco.exibir_extrato_conta()
+        elif opcao == 'c':
+            banco.cadastrar_usuario()
+        elif opcao == 'a':
+            banco.abrir_conta_corrente()
+        elif opcao == 'q':
+            print("Encerrando o Sistema Bancário. Volte Sempre!")
+            break
+        else:
+            print("Opção Inválida! Favor seleciona novamente a operação desejada.")
+
+if __name__ == "__main__":
+    main()
+
+
